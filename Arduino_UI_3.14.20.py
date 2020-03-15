@@ -16,9 +16,13 @@ Last worked on: 14, March, 2020
 import pyfirmata
 import time
 import numpy as np
+import tkinter as tk
 
 # In[2]:
 
+
+# In[2]:
+'''
 #user inputs
 #magnitude of Magnetic Field (Gauss)
 mag = float(input('desired magnitude of field: '))
@@ -26,7 +30,7 @@ mag = float(input('desired magnitude of field: '))
 theta = float(input('desired direction of field: '))
 #offset for earths magnetic field (Gauss)
 offset = float(input('desired offset of field (z-direction): '))
-
+'''
 # In[3]:
 
 #define the port here
@@ -60,24 +64,6 @@ pinY = boardUNO.get_pin('d:3:p')
 pinX = boardUNO.get_pin('d:5:p')
 pinZ = boardUNO.get_pin('d:6:p')
 
-
-
-# In[6]:
-
-
-'''
-We are assuming that:
-The red coil is in the z direction
-The black coil is in the x direction
-The yellow coil is in the y direction
-'''
-
-# In[7]:
-
-#define components of desired B field from user inputs
-Bx0 = mag*np.cos(theta)
-By0 = mag*np.sin(theta)
-Bz0 = offset
 
 # In[8]:
 
@@ -129,24 +115,89 @@ def Vz(Iz):
 def value(V):
     return V/4.911
 
-#define values to write to each pin
-xInput = (value(Vx(Ix(Bx0))))
-yInput = (value(Vy(Iy(By0))))
-zInput = (value(Vz(Iz(Bz0))))
 
-#print values which will be written to each pin
-print('Inputs for arduino:')
+# In[6]:
+#initialize the tk interface
+# m = master
+    
+m = tk.Tk()
 
-print ('xInput =', xInput)
-print ('yInput =', yInput)
-print ('zInput =', zInput)
+# In[6]:
+tk.Label(m, text='Magnitude (Gauss):').grid(row=0)
+tk.Label(m, text='Angle (Radians):').grid(row=1)
+tk.Label(m, text='Z-Offset (Gauss):').grid(row=2)
+mag = tk.Entry(m, textvariable = 'mag')
+angle = tk.Entry(m, textvariable = 'theta')
+offset = tk.Entry(m, textvariable = 'offset')
 
-print('Make sure these are all numbers between 0 and 1!')
-        
+tk.Label(m, text='Click to print arduino inputs:').grid(row=3, column =0)
+tk.Label(m, text='Click to write to arduino pin:').grid(row=4, column=0)
+
+mag.grid(row=0, column=1)
+angle.grid(row = 1, column = 1)
+offset.grid(row =2, column = 1)
+# In[7]:
+def check():
+    
+    mag0 = float(mag.get())
+    theta0 = float(angle.get())
+    offset0 = float(offset.get())
+    Bx0 = mag0 * np.cos(theta0)
+    By0 = mag0 * np.sin(theta0)
+    Bz0 = offset0
+    
+    
+    #define values to write to each pin
+    xInput = (value(Vx(Ix(Bx0))))
+    yInput = (value(Vy(Iy(By0))))
+    zInput = (value(Vz(Iz(Bz0))))
+    
+    
+    #print values which will be written to each pin
+    tk.Label(m, text='                             ').grid(row=5)
+    tk.Label(m, text='                             ').grid(row=6)
+    tk.Label(m, text='                             ').grid(row=7)
+    tk.Label(m, text='                             ').grid(row=8)
+    
+    tk.Label(m, text='Inputs for arduino:').grid(row=5)
+    tk.Label(m, text='xInput =' + str(round(float(xInput),2))).grid(row=6)
+    tk.Label(m, text='yInput =' + str(round(float(yInput),2))).grid(row=7)
+    tk.Label(m, text='zInput =' + str(round(float(zInput),2))).grid(row=8)
+    
 # In[11]:
 
-#write to the pins
-pinX.write(xInput)
-pinY.write(yInput)
-pinZ.write(zInput)
+def pinwrite():
 
+    mag0 = float(mag.get())
+    theta0 = float(angle.get())
+    offset0 = float(offset.get())
+    Bx0 = mag0 * np.cos(theta0)
+    By0 = mag0 * np.sin(theta0)
+    Bz0 = offset0
+    
+    #define values to write to each pin
+    xInput = (value(Vx(Ix(Bx0))))
+    yInput = (value(Vy(Iy(By0))))
+    zInput = (value(Vz(Iz(Bz0))))
+    #define components of desired B field from user inputs
+    
+    #write to the pins
+    print('write to the pins')
+    pinX.write(xInput)
+    pinY.write(yInput)
+    pinZ.write(zInput)
+
+
+# In[11]:
+    
+b = tk.Button(m, text="check",
+        command=check)
+b.grid(row=3, column=1)
+
+b0 = tk.Button(m, text="run",
+        command=pinwrite)
+b0.grid(row=4, column=1)
+
+
+# In[6]:
+m.mainloop()
