@@ -163,6 +163,15 @@ def check():
     tk.Label(m, text='xInput =' + str(round(float(xInput),2))).grid(row=6)
     tk.Label(m, text='yInput =' + str(round(float(yInput),2))).grid(row=7)
     tk.Label(m, text='zInput =' + str(round(float(zInput),2))).grid(row=8)
+   
+      
+    if xInput > 1:
+        tk.Label(m, text='xINPUT out of range [0,1]', fg="red").grid(row=6, column=1)
+    if yInput > 1:
+        tk.Label(m, text='yINPUT out of range [0,1]', fg="red").grid(row=7, column=1)
+    if zInput > 1:
+        tk.Label(m, text='zINPUT out of range [0,1]', fg="red").grid(row=8, column=1)
+    
     
 # In[11]:
 
