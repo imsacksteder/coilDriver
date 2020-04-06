@@ -18,7 +18,7 @@ import tkinter as tk
 #----------------------------------------
 
 #define the port that the Arduino is on
-port='/dev/tty.usbmodem1431101'
+port='/dev/tty.usbmodem1411101'
 #example port (mac):  '/dev/tty.usbmodem14201'
 #example port (windows): 'COM5'
 boardUNO = pyfirmata.Arduino(port)
@@ -93,8 +93,8 @@ def value(V):
 m = tk.Tk()
 m.title('Arduino GUI')
 tk.Label(m, text='Please select a mode:').grid(row=0)
-tk.Label(m, text='Static:').grid(row=1)
-tk.Label(m, text='Dynamic:').grid(row=2)
+#tk.Label(m, text='Static:').grid(row=1)
+#tk.Label(m, text='Dynamic:').grid(row=2)
 
 #----------------------------------------
 # Tk interface (Static)
@@ -212,7 +212,7 @@ def dynamic():
     dyno = tk.Tk()
     dyno.title('Dynamic Input')
 
-    tk.Label(dyno, text='Field magnetude (gauss)').grid(row=0)
+    tk.Label(dyno, text='Field magnitude (gauss)').grid(row=0)
     tk.Label(dyno, text='Change in angle per iteration(degrees)').grid(row=1)
     tk.Label(dyno, text='Time between intervals (seconds)').grid(row=2)
     tk.Label(dyno, text='Z-direction offset(gauss)').grid(row=3)
@@ -233,6 +233,7 @@ def dynamic():
         offset = float(TKoffset.get())
         i = 0
 
+        start = time.time()
         while i*dTheta <= np.pi/2:
             theta = i*dTheta
             Bx = mag * np.cos(theta)
@@ -256,13 +257,19 @@ def dynamic():
             tk.Label(dyno, text='zInput =' + str(round(float(zInput),2))).grid(row=8)
 
             #write to the pins
-            print('write to the pins')
+            measuredMag=np.sqrt(Bx**2+By**2)
+            print('Magnitude: '+str(measuredMag)+" Gauss")
             pinX.write(xInput)
             pinY.write(yInput)
             pinZ.write(zInput)
             i +=1
             dyno.update()
-            time.sleep(waitTime)
+            magnitudeList+=measuredMag
+            if i*dTheta <= np.pi/2:
+                time.sleep(waitTime)
+
+        end = time.time()
+        print ("done. "+str(end-start)+" seconds elapsed.")
 
     tk.Button(dyno,text='go', command=go).grid(row=4,column=1)
     dyno.mainloop()
@@ -271,10 +278,10 @@ def dynamic():
 # The rest of main interface
 #----------------------------------------
 
-staticButton = tk.Button(m, text="click me!", command=static)
-staticButton.grid(row=1, column=1)
+staticButton = tk.Button(m, text="Static Mode", command=static)
+staticButton.grid(row=1)
 
-dynamicButton = tk.Button(m, text="or me!", command=dynamic)
-dynamicButton.grid(row=2, column=1)
+dynamicButton = tk.Button(m, text="Dynamic Mode", command=dynamic)
+dynamicButton.grid(row=2)
 
 m.mainloop()
