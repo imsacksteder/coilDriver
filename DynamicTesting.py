@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 '''
+For testing the delay in the dynamic mode function.
+This one writes important values to a csv for graphical interpretation
+
 This code is so we can control the Arduino output on our three ports, setting it to whatever voltage we want.
 
 To get this code to run properly, run the sketch located in:
@@ -97,107 +100,6 @@ tk.Label(m, text='Please select a mode:').grid(row=0)
 #tk.Label(m, text='Dynamic:').grid(row=2)
 
 #----------------------------------------
-# Tk interface (Static)
-#----------------------------------------
-
-def static():
-    '''
-    user inputs
-
-    magnitude of Magnetic Field (Gauss)
-    mag = float(input('desired magnitude of field: '))
-
-    angle of Magnetic Field (Radians)
-    theta = float(input('desired direction of field: '))
-
-    offset for earths magnetic field (Gauss)
-    offset = float(input('desired offset of field (z-direction): '))
-    '''
-    m.destroy()
-    static = tk.Tk()
-    static.title('Static Input')
-    tk.Label(static, text='Magnitude (Gauss):').grid(row=0)
-    tk.Label(static, text='Angle (Degrees):').grid(row=1)
-    tk.Label(static, text='Z-Offset (Gauss):').grid(row=2)
-    mag = tk.Entry(static, textvariable = 'mag')
-    angle = tk.Entry(static, textvariable = 'theta')
-    offset = tk.Entry(static, textvariable = 'offset')
-
-    tk.Label(static, text='Click to print arduino inputs:').grid(row=3, column =0)
-    tk.Label(static, text='Click to write to arduino pin:').grid(row=4, column=0)
-
-    mag.grid(row=0, column=1)
-    angle.grid(row = 1, column = 1)
-    offset.grid(row =2, column = 1)
-
-    def check():
-
-        mag0 = float(mag.get())
-        theta0 = float(angle.get())*np.pi/180
-        #we want it in rad for the math
-        offset0 = float(offset.get())
-        Bx0 = mag0 * np.cos(theta0)
-        By0 = mag0 * np.sin(theta0)
-        Bz0 = offset0
-
-
-        #define values to write to each pin
-        xInput = (value(Vx(Ix(Bx0))))
-        yInput = (value(Vy(Iy(By0))))
-        zInput = (value(Vz(Iz(Bz0))))
-
-
-        #print values which will be written to each pin
-        tk.Label(static, text='                             ').grid(row=5)
-        tk.Label(static, text='                             ').grid(row=6)
-        tk.Label(static, text='                             ').grid(row=7)
-        tk.Label(static, text='                             ').grid(row=8)
-
-        tk.Label(static, text='Inputs for arduino:').grid(row=5)
-        tk.Label(static, text='xInput =' + str(round(float(xInput),2))).grid(row=6)
-        tk.Label(static, text='yInput =' + str(round(float(yInput),2))).grid(row=7)
-        tk.Label(static, text='zInput =' + str(round(float(zInput),2))).grid(row=8)
-
-
-        if xInput > 1:
-            tk.Label(static, text='xINPUT out of range [0,1]', fg="red").grid(row=6, column=1)
-        if yInput > 1:
-            tk.Label(static, text='yINPUT out of range [0,1]', fg="red").grid(row=7, column=1)
-        if zInput > 1:
-            tk.Label(static, text='zINPUT out of range [0,1]', fg="red").grid(row=8, column=1)
-
-    def pinwrite():
-        check()
-        mag0 = float(mag.get())
-        theta0 = float(angle.get())*np.pi/180
-        offset0 = float(offset.get())
-        Bx0 = mag0 * np.cos(theta0)
-        By0 = mag0 * np.sin(theta0)
-        Bz0 = offset0
-
-        #define values to write to each pin
-        xInput = (value(Vx(Ix(Bx0))))
-        yInput = (value(Vy(Iy(By0))))
-        zInput = (value(Vz(Iz(Bz0))))
-        #define components of desired B field from user inputs
-
-        #write to the pins
-        print('write to the pins')
-        pinX.write(xInput)
-        pinY.write(yInput)
-        pinZ.write(zInput)
-
-    #buttons
-    b = tk.Button(static, text="check", command=check)
-    b.grid(row=3, column=1)
-
-    b0 = tk.Button(static, text="run", command=pinwrite)
-    b0.grid(row=4, column=1)
-
-
-    static.mainloop()
-
-#----------------------------------------
 # Tk interface (Dynamic)
 #----------------------------------------
 
@@ -208,7 +110,6 @@ def dynamic():
     The magnitude of the magnetic field, along with the change in angle
     and time between each iteration are all controlled with the tk Interface
     '''
-    m.destroy()
     dyno = tk.Tk()
     dyno.title('Dynamic Input')
 
@@ -226,6 +127,12 @@ def dynamic():
     TKoffset = tk.Entry(dyno, textvariable = 'TKoffset')
     TKoffset.grid(row=3,column=1)
 
+    def reset(inputMag, inputAngle, inputWait, inputOffset):
+        dyno.destroy()
+        dynamic()
+        TKmag.set(inputMag)
+
+
     def go():
         mag = float(TKmag.get())
         dTheta = float(TKdAngle.get())*np.pi/180
@@ -233,6 +140,7 @@ def dynamic():
         offset = float(TKoffset.get())
         i = 0
 
+        magnitudeList = []
         start = time.time()
         while i*dTheta <= np.pi/2:
             theta = i*dTheta
@@ -257,19 +165,28 @@ def dynamic():
             tk.Label(dyno, text='zInput =' + str(round(float(zInput),2))).grid(row=8)
 
             #write to the pins
-            measuredMag=np.sqrt(Bx**2+By**2)
+            measuredMag = float(np.sqrt(Bx**2+By**2))
             print('Magnitude: '+str(measuredMag)+" Gauss")
+            magnitudeList.append(measuredMag)
             pinX.write(xInput)
             pinY.write(yInput)
             pinZ.write(zInput)
             i +=1
             dyno.update()
-            magnitudeList+=measuredMag
             if i*dTheta <= np.pi/2:
                 time.sleep(waitTime)
 
         end = time.time()
-        print ("done. "+str(end-start)+" seconds elapsed.")
+        runtime = (end-start)
+        iterationCount = len(magnitudeList)
+        expectedRuntime=(waitTime*iterationCount)
+        avgMag = (sum(magnitudeList)/len(magnitudeList))
+
+        print ("done. Results written to arduinoTesting.csv. Resetting interface...")
+        file = open ("arduinoTesting.csv", 'a')
+        file.write(str(mag)+", "+str(waitTime)+", "+str(TKdAngle.get())+", "+str(iterationCount)+", "+str(expectedRuntime)+", "+str(runtime)+", "+str(avgMag)+"\n")
+        file.close()
+        reset(TKmag.get(),TKdAngle.get(),TKwaitTime.get(),TKoffset.get())
 
     tk.Button(dyno,text='go', command=go).grid(row=4,column=1)
     dyno.mainloop()
@@ -278,10 +195,12 @@ def dynamic():
 # The rest of main interface
 #----------------------------------------
 
-staticButton = tk.Button(m, text="Static Mode", command=static)
-staticButton.grid(row=1)
+#staticButton = tk.Button(m, text="Static Mode", command=static)
+#staticButton.grid(row=1)
 
 dynamicButton = tk.Button(m, text="Dynamic Mode", command=dynamic)
 dynamicButton.grid(row=2)
+m.destroy()
+dynamic()
 
 m.mainloop()
